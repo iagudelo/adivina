@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adivina el Número - Juego Matemático</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-right: 10px;
+            width: 200px;
+        }
+        #gameArea, #endGame {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loginArea">
+            <h1>Bienvenido al Juego Matemático</h1>
+            <input type="email" id="email" placeholder="Correo electrónico institucional">
+            <button onclick="login()">Iniciar Sesión</button>
+        </div>
+        <div id="gameArea">
+            <h1>Adivina el Número</h1>
+            <button onclick="startGame()">Iniciar Juego</button>
+            <p id="question"></p>
+            <input type="number" id="answer" placeholder="Tu respuesta">
+            <button onclick="checkAnswer()">Comprobar</button>
+            <p id="result"></p>
+            <p id="score">Puntuación: 0</p>
+            <button onclick="endGame()">Terminar Juego</button>
+        </div>
+        <div id="endGame">
+            <h2>Juego Terminado</h2>
+            <p id="finalScore"></p>
+            <button onclick="playAgain()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let targetNumber;
+        let currentQuestion;
+        let currentPlayer = '';
+        let gameStarted = false;
+
+        const operations = [
+            (a, b) => ({ question: `${a} + ${b}`, answer: a + b }),
+            (a, b) => ({ question: `${a} - ${b}`, answer: a - b }),
+            (a, b) => ({ question: `${a} × ${b}`, answer: a * b }),
+            (a, b) => ({ question: `${a} ÷ ${b}`, answer: a / b }),
+            (a, b, c) => ({ question: `(${a} + ${b}) × ${c}`, answer: (a + b) * c }),
+            (a, b, c) => ({ question: `${a} × ${b} - ${c}`, answer: a * b - c }),
+            (a, b, c) => ({ question: `${a} + ${b} ÷ ${c}`, answer: a + b / c }),
+            (a, b, c) => ({ question: `(${a} - ${b}) ÷ ${c}`, answer: (a - b) / c }),
+            (a, b, c, d) => ({ question: `${a} + ${b} - ${c} × ${d}`, answer: a + b - c * d }),
+            (a, b, c, d) => ({ question: `(${a} + ${b}) × (${c} - ${d})`, answer: (a + b) * (c - d) }),
+            (a, b, c) => ({ question: `${a}² + ${b} - ${c}`, answer: a * a + b - c }),
+            (a, b) => ({ question: `${a}³ ÷ ${b}`, answer: a * a * a / b }),
+            (a, b, c) => ({ question: `√(${a}² + ${b}²) + ${c}`, answer: Math.sqrt(a*a + b*b) + c }),
+            (a, b, c) => ({ question: `|${a} - ${b}| + ${c}`, answer: Math.abs(a - b) + c }),
+            (a, b, c) => ({ question: `max(${a}, ${b}) + ${c}`, answer: Math.max(a, b) + c }),
+            (a, b, c) => ({ question: `min(${a}, ${b}) × ${c}`, answer: Math.min(a, b) * c }),
+            (a, b) => ({ question: `${a} % ${b} + ${a}`, answer: a % b + a }),
+            (a, b, c) => ({ question: `(${a} + ${b}) % ${c}`, answer: (a + b) % c }),
+            (a, b, c) => ({ question: `⌊${a} ÷ ${b}⌋ + ${c}`, answer: Math.floor(a / b) + c }),
+            (a, b, c) => ({ question: `⌈${a} ÷ ${b}⌉ × ${c}`, answer: Math.ceil(a / b) * c })
+        ];
+
+        function login() {
+            const email = document.getElementById('email').value;
+            if (email.endsWith('@institucion.edu.co')) {
+                currentPlayer = email;
+                document.getElementById('loginArea').style.display = 'none';
+                document.getElementById('gameArea').style.display = 'block';
+            } else {
+                alert('Por favor, usa un correo electrónico institucional válido.');
+            }
+        }
+
+        function startGame() {
+            if (!gameStarted) {
+                gameStarted = true;
+                score = 0;
+                document.getElementById('score').textContent = 'Puntuación: 0';
+                generateQuestion();
+            }
+        }
+
+        function generateQuestion() {
+            if (!gameStarted) return;
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            const a = Math.floor(Math.random() * 20) + 1;
+            const b = Math.floor(Math.random() * 20) + 1;
+            const c = Math.floor(Math.random() * 10) + 1;
+            const d = Math.floor(Math.random() * 10) + 1;
+
+            currentQuestion = operation(a, b, c, d);
+            targetNumber = Math.round(currentQuestion.answer * 100) / 100; // Redondear a 2 decimales
+            document.getElementById('question').textContent = `¿Cuál es el resultado de ${currentQuestion.question}?`;
+        }
+
+        function checkAnswer() {
+            if (!gameStarted) return;
+            const userAnswer = parseFloat(document.getElementById('answer').value);
+            const resultElement = document.getElementById('result');
+            const scoreElement = document.getElementById('score');
+
+            if (Math.abs(userAnswer - targetNumber) < 0.01) {
+                resultElement.textContent = '¡Correcto!';
+                score++;
+            } else {
+                resultElement.textContent = `Incorrecto. La respuesta correcta era ${targetNumber}.`;
+            }
+
+            scoreElement.textContent = `Puntuación: ${score}`;
+            document.getElementById('answer').value = '';
+            generateQuestion();
+        }
+
+        function endGame() {
+            if (!gameStarted) return;
+            gameStarted = false;
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('endGame').style.display = 'block';
+            document.getElementById('finalScore').textContent = `Puntuación final: ${score}`;
+            saveScore();
+        }
+
+        function saveScore() {
+            // En un entorno real, aquí se enviaría la puntuación a un servidor
+            // Para esta demostración, usaremos localStorage
+            let scores = JSON.parse(localStorage.getItem('scores')) || {};
+            scores[currentPlayer] = score;
+            localStorage.setItem('scores', JSON.stringify(scores));
+        }
+
+        function playAgain() {
+            document.getElementById('endGame').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            startGame();
+        }
+    </script>
+</body>
+</html>
