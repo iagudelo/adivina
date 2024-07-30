@@ -10,7 +10,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
         }
@@ -20,6 +20,8 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             text-align: center;
+            max-width: 800px;
+            width: 100%;
         }
         button {
             background-color: #4CAF50;
@@ -42,13 +44,26 @@
             margin-right: 10px;
             width: 250px;
         }
-        #gameArea, #endGame {
+        #gameArea, #endGame, #resultsArea {
             display: none;
         }
         #debugInfo {
             margin-top: 20px;
             font-size: 12px;
             color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
@@ -69,11 +84,27 @@
             <p id="result"></p>
             <p id="score">Puntuación: 0</p>
             <button onclick="endGame()">Terminar Juego</button>
+            <button id="resultsButton" onclick="showResults()" style="display: none;">Resultados</button>
         </div>
         <div id="endGame">
             <h2>Juego Terminado</h2>
             <p id="finalScore"></p>
             <button onclick="playAgain()">Jugar de Nuevo</button>
+        </div>
+        <div id="resultsArea">
+            <h2>Resultados de los Estudiantes</h2>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Correo</th>
+                        <th>Puntuación</th>
+                        <th>Fecha y Hora</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+            <button onclick="hideResults()">Volver al Juego</button>
         </div>
         <div id="debugInfo"></div>
     </div>
@@ -84,6 +115,7 @@
         let currentQuestion;
         let currentPlayer = '';
         let gameStarted = false;
+        const TEACHER_EMAIL = 'ivanagudeloc@iemjcaicedo.edu.co';
 
         const operations = [
             (a, b) => ({ question: `${a} + ${b}`, answer: a + b }),
@@ -120,9 +152,12 @@
                 currentPlayer = email;
                 document.getElementById('loginArea').style.display = 'none';
                 document.getElementById('gameArea').style.display = 'block';
+                if (email === TEACHER_EMAIL) {
+                    document.getElementById('resultsButton').style.display = 'inline-block';
+                }
                 debug('Inicio de sesión exitoso. Área de juego mostrada.');
             } else {
-                alert('Por favor, usa un correo electrónico válido de IE MJ Caicedo (@iemjcaicedo.edu.co).');
+                alert('Por favor, usa un correo electrónico válido de IEMJ Caicedo (@iemjcaicedo.edu.co).');
                 debug('Inicio de sesión fallido: correo no válido.');
             }
         }
@@ -196,10 +231,12 @@
         }
 
         function saveScore() {
-            // En un entorno real, aquí se enviaría la puntuación a un servidor
-            // Para esta demostración, usaremos localStorage
             let scores = JSON.parse(localStorage.getItem('scores')) || {};
-            scores[currentPlayer] = score;
+            const now = new Date();
+            scores[currentPlayer] = {
+                score: score,
+                date: now.toLocaleString()
+            };
             localStorage.setItem('scores', JSON.stringify(scores));
             debug(`Puntuación guardada para ${currentPlayer}: ${score}`);
         }
@@ -209,6 +246,27 @@
             document.getElementById('gameArea').style.display = 'block';
             startGame();
             debug('Nuevo juego iniciado.');
+        }
+
+        function showResults() {
+            const scores = JSON.parse(localStorage.getItem('scores')) || {};
+            const resultsBody = document.getElementById('resultsBody');
+            resultsBody.innerHTML = '';
+            for (const [email, data] of Object.entries(scores)) {
+                const row = resultsBody.insertRow();
+                row.insertCell(0).textContent = email;
+                row.insertCell(1).textContent = data.score;
+                row.insertCell(2).textContent = data.date;
+            }
+            document.getElementById('gameArea').style.display = 'none';
+            document.getElementById('resultsArea').style.display = 'block';
+            debug('Resultados mostrados.');
+        }
+
+        function hideResults() {
+            document.getElementById('resultsArea').style.display = 'none';
+            document.getElementById('gameArea').style.display = 'block';
+            debug('Volviendo al área de juego.');
         }
 
         // Inicialización
